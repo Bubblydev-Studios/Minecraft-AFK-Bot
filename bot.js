@@ -97,3 +97,5 @@ bot.on('end', () => {
 bot.on('error', (err) => {
   console.error('⚠️ Error:', err);
 });
+
+console.log("🔌 Attempting to connect to Minecraft server...");
