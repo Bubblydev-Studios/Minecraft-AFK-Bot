@@ -1,8 +1,7 @@
-```json
 {
   "name": "nuekkis-afk-bot",
   "version": "1.0.1",
-  "description": "An AFK bot that moves on-site to keep Aternos servers open.",
+  "description": "An AFK bot for Minecraft servers",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
@@ -13,4 +12,3 @@
     "mineflayer": "^4.37.1"
   }
 }
-```
