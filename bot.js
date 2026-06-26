@@ -1,3 +1,14 @@
+const http = require('http');
+
+const PORT = process.env.PORT || 10000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Minecraft AFK Bot is running!');
+}).listen(PORT, () => {
+  console.log(`🌐 Health server listening on port ${PORT}`);
+});
+
 const mineflayer = require('mineflayer');
 const config = require('./config.json');
 
@@ -12,7 +23,6 @@ const bot = mineflayer.createBot({
 
 let movementPhase = 0;
 const STEP_INTERVAL = 1500;
-const STEP_SPEED    = 1;
 const JUMP_DURATION = 500;
 
 bot.on('spawn', () => {
@@ -33,19 +43,23 @@ function movementCycle() {
       bot.setControlState('back', false);
       bot.setControlState('jump', false);
       break;
+
     case 1:
       bot.setControlState('forward', false);
       bot.setControlState('back', true);
       bot.setControlState('jump', false);
       break;
+
     case 2:
       bot.setControlState('forward', false);
       bot.setControlState('back', false);
       bot.setControlState('jump', true);
+
       setTimeout(() => {
         bot.setControlState('jump', false);
       }, JUMP_DURATION);
       break;
+
     case 3:
       bot.setControlState('forward', false);
       bot.setControlState('back', false);
@@ -58,9 +72,28 @@ function movementCycle() {
   setTimeout(movementCycle, STEP_INTERVAL);
 }
 
+bot.on('login', () => {
+  console.log('🔑 Logged into the server.');
+});
+
+bot.on('spawn', () => {
+  console.log('🎮 Spawned successfully.');
+});
+
+bot.on('kicked', (reason) => {
+  console.log('🚫 Kicked:', reason);
+});
+
+bot.on('end', () => {
+  console.log('⛔ Bot disconnected.');
+
+  // Auto reconnect after 10 seconds
+  setTimeout(() => {
+    console.log('🔄 Restarting...');
+    process.exit(1);
+  }, 10000);
+});
+
 bot.on('error', (err) => {
   console.error('⚠️ Error:', err);
-});
-bot.on('end', () => {
-  console.log('⛔️ Bot Disconnected!');
 });
