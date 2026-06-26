@@ -1,5 +1,8 @@
 const http = require('http');
+const mineflayer = require('mineflayer');
+const config = require('./config.json');
 
+/* -------------------- Render health server -------------------- */
 const PORT = process.env.PORT || 10000;
 
 http.createServer((req, res) => {
@@ -9,93 +12,84 @@ http.createServer((req, res) => {
   console.log(`🌐 Health server listening on port ${PORT}`);
 });
 
-const mineflayer = require('mineflayer');
-const config = require('./config.json');
+/* -------------------- Bot state -------------------- */
+let bot;
 
-const bot = mineflayer.createBot({
-  host: config.serverHost,
-  port: config.serverPort,
-  username: config.botUsername,
-  auth: 'offline',
-  version: false,
-  viewDistance: config.botChunk
-});
+/* IMPORTANT: change this if needed */
+const MC_VERSION = "1.21.8"; // adjust if your server differs
 
-let movementPhase = 0;
-const STEP_INTERVAL = 1500;
-const JUMP_DURATION = 500;
+function startBot() {
+  console.log("🔌 Attempting to connect to Minecraft server...");
 
-bot.on('spawn', () => {
-  setTimeout(() => {
-    bot.setControlState('sneak', true);
-    console.log(`✅ ${config.botUsername} is Ready!`);
-  }, 3000);
+  bot = mineflayer.createBot({
+    host: config.serverHost,
+    port: config.serverPort,
+    username: config.botUsername,
+    auth: 'offline',
+    version: MC_VERSION
+  });
 
-  setTimeout(movementCycle, STEP_INTERVAL);
-});
+  let movementPhase = 0;
+  const STEP_INTERVAL = 1500;
+  const JUMP_DURATION = 500;
 
-function movementCycle() {
-  if (!bot.entity) return;
+  bot.on('spawn', () => {
+    console.log(`✅ ${config.botUsername} spawned in world`);
 
-  switch (movementPhase) {
-    case 0:
-      bot.setControlState('forward', true);
-      bot.setControlState('back', false);
-      bot.setControlState('jump', false);
-      break;
+    setTimeout(() => {
+      bot.setControlState('sneak', true);
+      console.log("🟢 AFK mode enabled");
+    }, 3000);
 
-    case 1:
-      bot.setControlState('forward', false);
-      bot.setControlState('back', true);
-      bot.setControlState('jump', false);
-      break;
+    setTimeout(movementCycle, STEP_INTERVAL);
+  });
 
-    case 2:
-      bot.setControlState('forward', false);
-      bot.setControlState('back', false);
-      bot.setControlState('jump', true);
+  function movementCycle() {
+    if (!bot || !bot.entity) return;
 
-      setTimeout(() => {
+    switch (movementPhase) {
+      case 0:
+        bot.setControlState('forward', true);
+        bot.setControlState('back', false);
         bot.setControlState('jump', false);
-      }, JUMP_DURATION);
-      break;
+        break;
 
-    case 3:
-      bot.setControlState('forward', false);
-      bot.setControlState('back', false);
-      bot.setControlState('jump', false);
-      break;
+      case 1:
+        bot.setControlState('forward', false);
+        bot.setControlState('back', true);
+        break;
+
+      case 2:
+        bot.setControlState('jump', true);
+        setTimeout(() => bot.setControlState('jump', false), JUMP_DURATION);
+        break;
+
+      case 3:
+        bot.clearControlStates();
+        break;
+    }
+
+    movementPhase = (movementPhase + 1) % 4;
+    setTimeout(movementCycle, STEP_INTERVAL);
   }
 
-  movementPhase = (movementPhase + 1) % 4;
+  bot.on('login', () => {
+    console.log("🔑 Logged into server");
+  });
 
-  setTimeout(movementCycle, STEP_INTERVAL);
+  bot.on('kicked', (reason) => {
+    console.log("🚫 Kicked:", reason.toString());
+  });
+
+  bot.on('error', (err) => {
+    console.log("⚠️ Error:", err.message);
+  });
+
+  bot.on('end', () => {
+    console.log("⛔ Disconnected. Reconnecting in 10s...");
+    setTimeout(startBot, 10000);
+  });
 }
 
-bot.on('login', () => {
-  console.log('🔑 Logged into the server.');
-});
-
-bot.on('spawn', () => {
-  console.log('🎮 Spawned successfully.');
-});
-
-bot.on('kicked', (reason) => {
-  console.log('🚫 Kicked:', reason);
-});
-
-bot.on('end', () => {
-  console.log('⛔ Bot disconnected.');
-
-  // Auto reconnect after 10 seconds
-  setTimeout(() => {
-    console.log('🔄 Restarting...');
-    process.exit(1);
-  }, 10000);
-});
-
-bot.on('error', (err) => {
-  console.error('⚠️ Error:', err);
-});
-
-console.log("🔌 Attempting to connect to Minecraft server...");
+/* -------------------- Start -------------------- */
+startBot();
