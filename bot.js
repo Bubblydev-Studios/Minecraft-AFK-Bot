@@ -21,13 +21,14 @@ const MC_VERSION = "1.21.8"; // adjust if your server differs
 function startBot() {
   console.log("🔌 Attempting to connect to Minecraft server...");
 
-  bot = mineflayer.createBot({
-    host: config.serverHost,
-    port: config.serverPort,
-    username: config.botUsername,
-    auth: 'offline',
-    version: MC_VERSION
-  });
+bot = mineflayer.createBot({
+  host: config.serverHost,
+  port: config.serverPort,
+  username: config.botUsername,
+  auth: 'offline',
+  version: "1.21.8",
+  skipValidation: true
+});
 
   let movementPhase = 0;
   const STEP_INTERVAL = 1500;
